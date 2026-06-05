@@ -25,8 +25,685 @@
     // 4. أنشئ Storage bucket اسمه "gifts" (Public)
     // 5. من Project Settings -> API انسخ URL و anon key
     // 6. الصقهم هنا:
-    const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
-    const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY-HERE';
+    const SUPABASE_URL = 'https://aaxxqbuexamipxhwlsg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_vT2xG2Cr7DatwhDN5aQSnA_EkRKDsrT';
+    const STORAGE_BUCKET = 'gifts';
+
+    const supabase = (SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-PROJECT'))
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Tajawal', 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #fbc2eb 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 30px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      text-align: center;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    h1 {
+      font-family: 'Reem Kufi', 'Tajawal', sans-serif;
+      color: #c2185b;
+      margin-bottom: 10px;
+      font-size: 2.2em;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: #777;
+      margin-bottom: 30px;
+      font-size: 1.05em;
+    }
+
+    /* زر القائمة الرئيسية */
+    .menu-button {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      color: #fff;
+      border: none;
+      padding: 20px 30px;
+      border-radius: 14px;
+      font-size: 1.3em;
+      font-weight: 700;
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 12px;
+      transition: all 0.3s;
+      box-shadow: 0 6px 18px rgba(238, 90, 82, 0.35);
+    }
+
+    .menu-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(238, 90, 82, 0.45);
+    }
+
+    /* إخفاء الأقسام */
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.5s ease; }
+
+    /* قائمة أعياد الميلاد */
+    .birthday-list { list-style: none; }
+
+    .birthday-item {
+      background: #fff5f7;
+      padding: 18px 20px;
+      margin: 10px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+      font-size: 1.1em;
+      font-weight: 500;
+    }
+
+    .birthday-item:hover {
+      background: #ffe4ec;
+      border-color: #e91e63;
+      transform: translateX(-5px);
+    }
+
+    .birthday-item.locked {
+      background: #ececec;
+      color: #888;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .birthday-item.locked:hover {
+      transform: none;
+      border-color: transparent;
+    }
+
+    .lock-icon { font-size: 1.2em; }
+
+    /* نموذج الاسم */
+    .name-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .name-input {
+      padding: 14px 16px;
+      font-size: 1.05em;
+      font-family: 'Tajawal', 'Cairo', sans-serif;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      outline: none;
+      transition: border 0.3s;
+      text-align: right;
+    }
+
+    .name-input:focus { border-color: #e91e63; }
+
+    .done-btn {
+      background: linear-gradient(135deg, #4caf50, #43a047);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1.1em;
+      font-weight: 700;
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .done-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(76,175,80,0.4); }
+    .done-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* بطاقة النتيجة */
+    .result-card {
+      margin-top: 20px;
+      padding: 20px;
+      background: #fff5f7;
+      border-radius: 14px;
+      border: 2px dashed #e91e63;
+    }
+
+    .result-card img {
+      max-width: 100%;
+      max-height: 320px;
+      border-radius: 12px;
+      margin: 15px 0;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .gift-name {
+      font-family: 'Reem Kufi', 'Tajawal', sans-serif;
+      font-weight: 700;
+      color: #c2185b;
+      font-size: 1.4em;
+      margin-bottom: 5px;
+    }
+
+    .gift-msg {
+      color: #555;
+      font-size: 1.05em;
+      margin-bottom: 10px;
+    }
+
+    .not-found {
+      color: #c62828;
+      margin-top: 15px;
+      font-style: italic;
+    }
+
+    .back-btn {
+      background: transparent;
+      border: 2px solid #999;
+      color: #666;
+      padding: 10px 22px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      font-family: 'Tajawal', sans-serif;
+      font-size: 1em;
+      transition: all 0.3s;
+    }
+
+    .back-btn:hover {
+      background: #999;
+      color: #fff;
+    }
+
+    /* قسم الأدمن */
+    .upload-btn {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-weight: 600;
+      font-family: 'Tajawal', sans-serif;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .form-label {
+      font-weight: 700;
+      color: #555;
+      display: block;
+      text-align: right;
+      margin-bottom: 4px;
+    }
+
+    .entry-row {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 10px;
+      margin: 8px 0;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .entry-row img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .entry-info { flex: 1; min-width: 0; text-align: right; }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75em;
+      margin-right: 5px;
+    }
+
+    .badge-starter { background: #fff3cd; color: #856404; }
+    .badge-shared { background: #d4edda; color: #155724; }
+
+    .del-btn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Tajawal', sans-serif;
+      flex-shrink: 0;
+    }
+
+    .status-box {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.9em;
+      text-align: right;
+    }
+
+    .status-ok { background: #e8f5e9; color: #2e7d32; }
+    .status-warn { background: #fff3e0; color: #e65100; }
+
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 1. القائمة الرئيسية -->
+    <div id="mainMenu" class="section active">
+      <h1>🎉 أهلاً بكم في موقع حيدر 🎉</h1>
+      <p class="subtitle">اختر أحد الخيارات التالية</p>
+      <button class="menu-button" onclick="showBirthdays()">🎁 هدايا عيد ميلاد حيدر</button>
+    </div>
+
+    <!-- 2. قائمة أعياد الميلاد -->
+    <div id="birthdayList" class="section">
+      <h1>اختر عيد الميلاد</h1>
+      <p class="subtitle">عيد ميلاده الأول متاح، الباقي قريباً</p>
+      <ul class="birthday-list">
+        <li class="birthday-item" onclick="selectBirthday(1)">عيد ميلاده الأول 🎈</li>
+        <li class="birthday-item locked" onclick="lockedNotice()">عيد ميلاده الثاني 🔒</li>
+        <li class="birthday-item locked" onclick="lockedNotice()">عيد ميلاده الثالث 🔒</li>
+        <li class="birthday-item locked" onclick="lockedNotice()">عيد ميلاده الرابع 🔒</li>
+        <li class="birthday-item locked" onclick="lockedNotice()">عيد ميلاده الخامس 🔒</li>
+      </ul>
+      <button class="back-btn" onclick="goBack('mainMenu')">← رجوع</button>
+    </div>
+
+    <!-- 3. إدخال الاسم -->
+    <div id="nameInput" class="section">
+      <h1>عيد الميلاد الأول 🎂</h1>
+      <p class="subtitle">اكتب اسم حسابك على إنستغرام لتشاهد الهدية التي أهديتها لحيدر</p>
+      <form class="name-form" onsubmit="searchGift(event)">
+        <input id="nameField" class="name-input" type="text" placeholder="اكتب اسمك على إنستغرام" required />
+        <button type="submit" class="done-btn">تم ✅</button>
+      </form>
+      <button class="back-btn" onclick="goBack('birthdayList')">← رجوع</button>
+    </div>
+
+    <!-- 4. النتيجة -->
+    <div id="result" class="section">
+      <h1>🎁 هديتك</h1>
+      <div id="resultContent"></div>
+      <button class="back-btn" onclick="goBack('nameInput')">← رجوع</button>
+    </div>
+
+    <!-- 5. تسجيل دخول الأدمن -->
+    <div id="adminLogin" class="section">
+      <h1>🔐 لوحة التحكم</h1>
+      <p class="subtitle">أدخل كلمة سر الأدمن</p>
+      <form class="name-form" onsubmit="adminAuth(event)">
+        <input id="adminPass" class="name-input" type="password" placeholder="كلمة السر" required />
+        <button type="submit" class="done-btn">فتح القفل 🔓</button>
+      </form>
+      <p style="color:#999; font-size:0.85em; margin-top:15px;">
+        كلمة السر الافتراضية: <code>haider2026</code> (غيّرها في الكود)
+      </p>
+      <div id="supabaseStatus" class="status-box"></div>
+    </div>
+
+    <!-- 6. لوحة الأدمن -->
+    <div id="adminPanel" class="section">
+      <h1>⚙️ لوحة التحكم</h1>
+      <p class="subtitle">أضف أو احذف الهدايا</p>
+
+      <form class="name-form" onsubmit="addEntry(event)" style="text-align:right;">
+        <label class="form-label">اسم حساب إنستغرام (مفتاح البحث)</label>
+        <input id="newKey" class="name-input" type="text" placeholder="مثال: sara_99" required />
+
+        <label class="form-label" style="margin-top:8px;">الاسم الظاهر</label>
+        <input id="newName" class="name-input" type="text" placeholder="مثال: سارة" required />
+
+        <label class="form-label" style="margin-top:8px;">صورة الهدية</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label for="newImgFile" class="upload-btn">📁 اختر صورة</label>
+          <input id="newImgFile" type="file" accept="image/*" style="display:none;" onchange="onImageChosen(this)" />
+          <span id="imgChosenName" style="color:#888; font-size:0.9em; flex:1; text-align:right;">لم تختر ملف</span>
+        </div>
+        <img id="imgPreview" style="display:none; max-width:100%; max-height:200px; margin-top:10px; border-radius:8px;" />
+        <p style="color:#888; font-size:0.8em; margin-top:5px; text-align:right;">
+          أو اكتب مسار الصورة: <input id="newImgPath" type="text" placeholder="gifts/sara.jpg" style="border:1px solid #ddd; padding:6px 8px; border-radius:6px; width:200px; font-size:0.9em; text-align:right;" />
+        </p>
+
+        <label class="form-label" style="margin-top:8px;">الرسالة</label>
+        <input id="newMsg" class="name-input" type="text" placeholder="مثال: دب صغير لطيف 🧸" required />
+
+        <button type="submit" class="done-btn" style="margin-top:10px;">➕ إضافة</button>
+      </form>
+
+      <h2 style="margin-top:30px; color:#555; font-size:1.2em; text-align:right;">الإدخالات الحالية</h2>
+      <div id="entryList" style="margin-top:10px;"></div>
+
+      <button class="back-btn" onclick="goBack('mainMenu')">← رجوع للموقع</button>
+    </div>
+
+  </div>
+
+  <script>
+    // ============ قاعدة بيانات الهدايا ============
+    // إدخالات ابتدائية تعمل دائماً. الإضافات الجديدة تذهب لـ Supabase.
+    const STARTER_GIFTS = {
+      "sara":   { name: "سارة",   img: "gifts/sara.jpg",   message: "دب صغير لطيف 🧸" },
+      "ahmed":  { name: "أحمد",   img: "gifts/ahmed.jpg",  message: "قصة ملونة جميلة 📚" },
+      "layla":  { name: "ليلى",   img: "gifts/layla.jpg",  message: "دراجة لامعة حمراء 🚲" }
+    };
+
+    // كلمة سر الأدمن — غيّرها لما تريد
+    const ADMIN_PASSWORD = "haider2026";
+
+    let giftsCache = null;
+
+    async function loadGifts() {
+      if (giftsCache) return giftsCache;
+
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('gifts').select('*');
+          if (error) throw error;
+          giftsCache = {};
+          for (const row of data) {
+            giftsCache[row.key] = { name: row.name, img: row.img, message: row.message };
+          }
+          localStorage.setItem('haiderGiftsCache', JSON.stringify({ ts: Date.now(), data: giftsCache }));
+          return Object.assign({}, STARTER_GIFTS, giftsCache);
+        } catch (err) {
+          console.warn('فشل تحميل Supabase، استخدام النسخة المخزنة:', err);
+        }
+      }
+
+      const cached = JSON.parse(localStorage.getItem('haiderGiftsCache') || 'null');
+      if (cached && Date.now() - cached.ts < 5 * 60 * 1000) {
+        return Object.assign({}, STARTER_GIFTS, cached.data);
+      }
+
+      return Object.assign({}, STARTER_GIFTS);
+    }
+
+    function searchGift(e) {
+      e.preventDefault();
+      const raw = document.getElementById('nameField').value.trim().toLowerCase();
+      const result = document.getElementById('resultContent');
+
+      loadGifts().then(gifts => {
+        const gift = gifts[raw];
+        if (gift) {
+          result.innerHTML = `
+            <div class="result-card">
+              <p class="gift-name">${gift.name}</p>
+              <p class="gift-msg">${gift.message}</p>
+              <img src="${gift.img}" alt="هدية من ${gift.name}"
+                   onerror="this.alt='(الصورة غير موجودة)';" />
+            </div>
+          `;
+        } else {
+          result.innerHTML = `
+            <p class="not-found">لم يتم العثور على هدية لـ "${raw}". تأكد من الاسم مع صاحب الموقع.</p>
+          `;
+        }
+        showSection('result');
+      });
+    }
+
+    // ============ الأدمن ============
+    function maybeShowAdmin() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('admin') === '1') {
+        const status = document.getElementById('supabaseStatus');
+        if (supabase) {
+          status.className = 'status-box status-ok';
+          status.innerHTML = '✅ Supabase متصل — الإدخالات ستظهر لكل الزوار.';
+        } else {
+          status.className = 'status-box status-warn';
+          status.innerHTML = '⚠️ Supabase غير مُعد. عدّل <code>SUPABASE_URL</code> و <code>SUPABASE_ANON_KEY</code> في بداية <code>index.html</code>.';
+        }
+        showSection('adminLogin');
+      }
+    }
+
+    function adminAuth(e) {
+      e.preventDefault();
+      const pass = document.getElementById('adminPass').value;
+      if (pass === ADMIN_PASSWORD) {
+        renderEntries();
+        showSection('adminPanel');
+      } else {
+        alert('❌ كلمة السر خاطئة');
+      }
+    }
+
+    function renderEntries() {
+      loadGifts().then(gifts => {
+        const list = document.getElementById('entryList');
+        const keys = Object.keys(gifts);
+        if (keys.length === 0) {
+          list.innerHTML = '<p style="color:#888; text-align:right;">لا توجد إدخالات بعد.</p>';
+          return;
+        }
+        list.innerHTML = keys.map(k => {
+          const g = gifts[k];
+          const isStarter = !!STARTER_GIFTS[k];
+          return `
+            <div class="entry-row">
+              <img src="${g.img}" onerror="this.style.background='#eee';" />
+              <div class="entry-info">
+                <strong>${g.name}</strong>
+                <span style="color:#888; font-size:0.85em;"> (المفتاح: ${k})</span>
+                ${isStarter ? '<span class="badge badge-starter">ابتدائي</span>' : '<span class="badge badge-shared">مشترك</span>'}
+                <div style="color:#666; font-size:0.85em; margin-top:4px;">${g.message}</div>
+              </div>
+              ${isStarter ? '' : `<button class="del-btn" onclick="deleteEntry('${k}')">حذف</button>`}
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    let chosenFile = null;
+
+    function onImageChosen(input) {
+      const file = input.files[0];
+      if (!file) return;
+      chosenFile = file;
+      document.getElementById('imgChosenName').textContent = file.name;
+      const preview = document.getElementById('imgPreview');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+    }
+
+    async function uploadImage(file) {
+      const key = document.getElementById('newKey').value.trim().toLowerCase() || 'img';
+      const ext = file.name.split('.').pop() || 'jpg';
+      const safeKey = key.replace(/[^a-z0-9_]/g, '_');
+      const path = `${safeKey}_${Date.now()}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (error) throw error;
+
+      const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      return pub.publicUrl;
+    }
+
+    function addEntry(e) {
+      e.preventDefault();
+      const key    = document.getElementById('newKey').value.trim().toLowerCase();
+      const name   = document.getElementById('newName').value.trim();
+      const pathIn = document.getElementById('newImgPath').value.trim();
+      const msg    = document.getElementById('newMsg').value.trim();
+
+      if (!key || !name || !msg) {
+        alert('يرجى ملء كل الحقول');
+        return;
+      }
+      if (!chosenFile && !pathIn) {
+        alert('اختر صورة أو اكتب مسارها');
+        return;
+      }
+      if (!supabase) {
+        alert('⚠️ Supabase غير مُعد. عدّل الإعدادات في أول الملف.');
+        return;
+      }
+
+      const submitBtn = e.target.querySelector('button[type=submit]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ جارٍ الرفع...';
+
+      loadGifts().then(async gifts => {
+        if (gifts[key]) {
+          if (!confirm(`"${key}" موجود مسبقاً. استبداله؟`)) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '➕ إضافة';
+            return;
+          }
+        }
+
+        try {
+          let finalImg;
+          if (chosenFile) {
+            finalImg = await uploadImage(chosenFile);
+          } else {
+            finalImg = pathIn.includes('/') ? pathIn : `gifts/${pathIn}`;
+          }
+
+          const { error } = await supabase.from('gifts').upsert({
+            key, name, img: finalImg, message: msg
+          });
+          if (error) throw new Error(error.message);
+
+          giftsCache = null;
+          localStorage.removeItem('haiderGiftsCache');
+
+          document.getElementById('newKey').value = '';
+          document.getElementById('newName').value = '';
+          document.getElementById('newImgPath').value = '';
+          document.getElementById('newMsg').value = '';
+          document.getElementById('imgChosenName').textContent = 'لم تختر ملف';
+          document.getElementById('imgPreview').style.display = 'none';
+          document.getElementById('newImgFile').value = '';
+          chosenFile = null;
+
+          renderEntries();
+          alert(`✅ تم إضافة "${name}" — يظهر الآن لكل الزوار.`);
+        } catch (err) {
+          alert('❌ ' + err.message);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '➕ إضافة';
+        }
+      });
+    }
+
+    function deleteEntry(key) {
+      if (!confirm(`حذف "${key}"؟ سيتم حذف صورته أيضاً.`)) return;
+      if (!supabase) {
+        alert('⚠️ Supabase غير مُعد.');
+        return;
+      }
+
+      supabase.from('gifts').select('img').eq('key', key).single().then(async ({ data, error }) => {
+        if (error) {
+          alert('❌ خطأ: ' + error.message);
+          return;
+        }
+
+        const { error: delErr } = await supabase.from('gifts').delete().eq('key', key);
+        if (delErr) {
+          alert('❌ فشل الحذف: ' + delErr.message);
+          return;
+        }
+
+        if (data && data.img && data.img.includes('/storage/v1/object/public/')) {
+          const filePath = data.img.split('/storage/v1/object/public/' + STORAGE_BUCKET + '/')[1];
+          if (filePath) {
+            await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
+          }
+        }
+
+        giftsCache = null;
+        localStorage.removeItem('haiderGiftsCache');
+        renderEntries();
+      });
+    }
+
+    // ============ التنقل بين الصفحات ============
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function goBack(id) { showSection(id); }
+    function showBirthdays() { showSection('birthdayList'); }
+    function lockedNotice() { alert('🔒 هذا العيد سيكون متاحاً لاحقاً!'); }
+    function selectBirthday(num) { if (num === 1) showSection('nameInput'); }
+
+    // ============ بداية التشغيل ============
+    maybeShowAdmin();
+  </script><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>هدايا عيد ميلاد حيدر 🎂</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;900&family=Reem+Kufi:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ============ إعدادات Supabase ============
+    // 1. ادخل https://supabase.com وسجّل حساب مجاني
+    // 2. أنشئ مشروع جديد
+    // 3. في SQL Editor نفّذ:
+    //
+    //    create table gifts (
+    //      key text primary key,
+    //      name text not null,
+    //      img text not null,
+    //      message text not null,
+    //      created_at timestamp default now()
+    //    );
+    //
+    // 4. أنشئ Storage bucket اسمه "gifts" (Public)
+    // 5. من Project Settings -> API انسخ URL و anon key
+    // 6. الصقهم هنا:
+    const SUPABASE_URL = 'https://aaxxqbuexamipxhwlsg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_vT2xG2Cr7DatwhDN5aQSnA_EkRKDsrT';
     const STORAGE_BUCKET = 'gifts';
 
     const supabase = (SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-PROJECT'))
